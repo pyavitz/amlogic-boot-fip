@@ -2,6 +2,7 @@ O ?= .
 TMP ?= .
 BL33 ?=
 COMPRESS_LZ4 ?= 0
+QEMU_LD_PREFIX ?= /usr/x86_64-linux-gnu/
 
 ifeq ($(COMPRESS_LZ4),0)
 	BL33_ARGS :=
@@ -11,7 +12,7 @@ endif
 
 UNAME_M := $(shell uname -m)
 ifneq ($(UNAME_M),x86_64)
-	QEMU =  qemu-x86_64
+	QEMU =  qemu-x86_64 -L $(QEMU_LD_PREFIX)
 endif
 
 .PHONY: clean distclean
@@ -79,4 +80,12 @@ ${O}/u-boot.bin: ${TMP}/bl2.n.bin.sig ${TMP}/bl30_new.bin.enc ${TMP}/bl31.img.en
 	${QEMU} ./aml_encrypt_gxl --bootmk --output ${O}/u-boot.bin \
 	               --bl2 ${TMP}/bl2.n.bin.sig --bl30 ${TMP}/bl30_new.bin.enc \
 		       --bl31 ${TMP}/bl31.img.enc --bl33 ${TMP}/bl33.bin.enc
+ifneq ($(AML_USER_SIG),)
+	${QEMU} ./${AML_ENCRYPT} --bootsig \
+		       --input ${O}/u-boot.bin \
+		       --amluserkey ${AML_USER_SIG} \
+		       --aeskey enable \
+		       --output ${O}/u-boot.bin.encrypt \
+		       --level 3
+endif
 endif
